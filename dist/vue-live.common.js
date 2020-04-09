@@ -8,6 +8,55 @@
   PrismEditor = PrismEditor && PrismEditor.hasOwnProperty('default') ? PrismEditor['default'] : PrismEditor;
   debounce = debounce && debounce.hasOwnProperty('default') ? debounce['default'] : debounce;
 
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
+  function ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
+
+    if (Object.getOwnPropertySymbols) {
+      var symbols = Object.getOwnPropertySymbols(object);
+      if (enumerableOnly) symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+      keys.push.apply(keys, symbols);
+    }
+
+    return keys;
+  }
+
+  function _objectSpread2(target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i] != null ? arguments[i] : {};
+
+      if (i % 2) {
+        ownKeys(source, true).forEach(function (key) {
+          _defineProperty(target, key, source[key]);
+        });
+      } else if (Object.getOwnPropertyDescriptors) {
+        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+      } else {
+        ownKeys(source).forEach(function (key) {
+          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+      }
+    }
+
+    return target;
+  }
+
   /**
    * evaluate es5 code in the browser
    * and return value if there s a return statement
@@ -33,7 +82,6 @@
     return requires[filepath];
   }
 
-  //
   var script = {
     name: "VueLivePreviewComponent",
     components: {},
@@ -69,6 +117,15 @@
       jsx: {
         type: Boolean,
         default: false
+      },
+
+      /**
+       * Outside data to the preview
+       * @example { count: 1 }
+       */
+      dataScope: {
+        type: Object,
+        default: function _default() {}
       }
     },
     data: function data() {
@@ -126,6 +183,14 @@
             data = evalInContext(script, function (filepath) {
               return requireAtRuntime(_this.requires, filepath);
             }, vueInbrowserCompiler.adaptCreateElement, vueInbrowserCompiler.concatenate) || {};
+
+            if (this.dataScope) {
+              var mergeData = _objectSpread2({}, data.data(), {}, this.dataScope);
+
+              data.data = function () {
+                return mergeData;
+              };
+            }
           }
 
           if (renderedComponent.template) {
@@ -556,6 +621,15 @@
         default: function _default() {
           return {};
         }
+      },
+
+      /**
+       * Outside data to the preview
+       * @example { count: 1 }
+       */
+      dataScope: {
+        type: Object,
+        default: function _default() {}
       }
     },
     data: function data() {
@@ -620,6 +694,7 @@
             language: _vm.lang,
             prismLang: _vm.prismLang,
             requires: _vm.requires,
+            "data-scope": _vm.dataScope,
             components: _vm.components
           },
           scopedSlots: _vm._u([
@@ -650,7 +725,8 @@
                       code: _vm.model,
                       components: _vm.components,
                       requires: _vm.requires,
-                      jsx: _vm.jsx
+                      jsx: _vm.jsx,
+                      "data-scope": _vm.dataScope
                     },
                     on: { "detect-language": _vm.switchLanguage }
                   })
